@@ -1,0 +1,79 @@
+---
+- name: Preparing Workstation
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Installing Linux Apps
+      become: true
+      apt:
+        name: '{{ item }}'
+        install_recommends: yes
+        state: present
+      loop:
+          - snapd
+          - zsh
+    - block:
+      - name: Verify if Oh-My-zsh is installed
+        command: test -d /home/{{ ansible_user_id }}/.oh-my-zsh
+        register: ohmyzsh
+        ignore_errors: true
+      - name: Installing Oh-My-zsh
+        shell: >
+          curl -o- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | bash
+        ignore_errors: true
+      - name: Change shell
+        become: true
+        user:
+          name: ubuntu
+          shell: /bin/zsh 
+        # shell:
+        #   command: 'curl -o- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | $SHELL'
+        #   warn: false
+          # become: false
+          # cmd: 'curl -fsL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | bash'
+          # warn: false
+        when: ohmyzsh.rc != 0
+      - name: Changing Default Shell to ZSH
+        become: yes
+        user: 
+          name: '{{ ansible_user_id }}'
+          shell: /bin/zsh 
+      - name: Changing Default ZSH Theme to Agnoster
+        lineinfile:
+          path: /home/{{ ansible_user_id }}/.zshrc
+          regexp: '^ZSH_THEME='
+          line: 'ZSH_THEME="agnoster"'
+      - name: Changing Default ZSH Theme to Bira
+        lineinfile:
+          path: /home/{{ ansible_user_id }}/.zshrc
+          regexp: '^ZSH_THEME='
+          line: 'ZSH_THEME="bira"'
+      - name: Creating ZSH Completion folder
+        file:
+          path: /home/{{ ansible_user_id }}/.oh-my-zsh/completions
+          state: directory
+          mode: 0755
+      - name: Adding autoload to compinit
+        lineinfile:
+          path: /home/{{ ansible_user_id }}/.zshrc
+          line: 'autoload -U compinit && compinit'
+          state: present
+    # - block:
+    #   - name: shell
+    #     shell: >
+    #       ". {{ ansible_env.HOME }}/.zshrc"
+    - block:
+      - name:  nvm
+        shell: >
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | zsh
+        args:
+          creates "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+      - name: Change shell
+        become: true
+        user:
+          name: ubuntu
+          shell: /bin/zsh 
+
+      - name: Install "Node 14"
+        shell: >
+          "/bin/zsh nvm install 14"

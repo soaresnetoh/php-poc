@@ -1,0 +1,5 @@
+.idea
+.vagrant
+playbook.retry
+www/demo/access.log
+www/demo/error.log
