@@ -47,11 +47,6 @@
           - restart apache2
       #  ignore_errors: yes
 
-      - name: Install libapache2-mod-php5.6 package
-        become: true
-        apt: name=libapache2-mod-php5.6 update_cache=yes state=present
-
-
       - name: apache2 listen on port {{ http_port }}
         lineinfile: dest=/etc/apache2/ports.conf regexp="^Listen " line="Listen {{ http_port }}" state=present
         notify:
@@ -71,7 +66,11 @@
     - block:
       #https://www.digitalocean.com/community/questions/how-to-upgrade-from-php-v-5-5-9-to-v-5-6
       - name: repository php56
-        apt_repository: repo='ppa:ondrej/php' state=present
+        apt_repository: repo='ppa:ondrej/php' update_cache=yes state=present
+
+      - name: Install libapache2-mod-php5.6 package
+        become: true
+        apt: name=libapache2-mod-php5.6 update_cache=yes state=present
 
       - name: Install libapache2-mod-fcgid
         apt: pkg={{item}} state=present update_cache=no
